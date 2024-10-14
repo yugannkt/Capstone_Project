@@ -35,7 +35,7 @@ jobs:
       # Step 5: Build and push backend Docker image
       - name: Build and Push Backend
         run: |
-          cd back_end
+          cd backend
           docker build -t back_end .
           docker tag back_end:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/back_end:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/back_end:latest
@@ -43,7 +43,7 @@ jobs:
       # Step 6: Build and push frontend Docker image
       - name: Build and Push Frontend
         run: |
-          cd front_end
+          cd frontend
           docker build -t front_end .
           docker tag front_end:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/front_end:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/front_end:latest
