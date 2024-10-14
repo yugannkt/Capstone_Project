@@ -37,11 +37,11 @@ jobs:
           docker build -t capstone_proj:frontend .  # Tag for frontend
           docker images
           echo "Frontend image built successfully"
-          docker images
-          docker tag capstone_proj:frontend ${{ secrets.ECR_REGISTRY }}/capstone_proj:frontend
-          echo "Frontend image tagged successfully"
-          docker images  # List all Docker images
-          docker inspect capstone_proj:frontend  # Inspect the frontend image
+          # docker images
+          # docker tag capstone_proj:frontend ${{ secrets.ECR_REGISTRY }}/capstone_proj:frontend
+          # echo "Frontend image tagged successfully"
+          # docker images  # List all Docker images
+          # docker inspect capstone_proj:frontend  # Inspect the frontend image
 
       - name: Push Frontend Image to ECR
         run: |
