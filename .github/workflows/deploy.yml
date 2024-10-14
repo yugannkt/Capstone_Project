@@ -36,7 +36,7 @@ jobs:
 
       - name: Push Frontend Image to ECR
         run: |
-          docker push ${{ secrets.ECR_REGISTRY }}/capstone_proj:frontend
+          docker push ${{ secrets.ECR_REGISTRY }}/capstone_proj:frontend  # Ensure this path is correct
 
       - name: Build Backend Image
         run: |
@@ -46,4 +46,4 @@ jobs:
 
       - name: Push Backend Image to ECR
         run: |
-          docker push ${{ secrets.ECR_REGISTRY }}/capstone_proj:backend
+          docker push ${{ secrets.ECR_REGISTRY }}/capstone_proj:backend  # Ensure this path is correct
