@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: CI/CD Pipeline
 
 on:
@@ -18,23 +19,31 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      # Step 3: Login to AWS ECR
+      # Step 3: Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1  # Change this to your AWS region
+
+      # Step 4: Login to Amazon ECR
       - name: Login to Amazon ECR
         run: |
-          echo "${{ secrets.AWS_ACCESS_KEY_ID }}" | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
 
-      # Step 4: Build and push backend Docker image
+      # Step 5: Build and push backend Docker image
       - name: Build and Push Backend
         run: |
-          cd backend
+          cd back_end
           docker build -t back_end .
           docker tag back_end:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/back_end:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/back_end:latest
 
-      # Step 5: Build and push frontend Docker image
+      # Step 6: Build and push frontend Docker image
       - name: Build and Push Frontend
         run: |
-          cd frontend
+          cd front_end
           docker build -t front_end .
           docker tag front_end:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/front_end:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj/front_end:latest
