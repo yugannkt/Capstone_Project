@@ -20,15 +20,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Create the ECR repository if it doesn't exist
-      - name: Create ECR repository
-        run: |
-          aws ecr describe-repositories --repository-names capstone_proj_frontend || \
-          aws ecr create-repository --repository-name capstone_proj_frontend
-
-          aws ecr describe-repositories --repository-names capstone_proj_backend || \
-          aws ecr create-repository --repository-name capstone_proj_backend
-
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
