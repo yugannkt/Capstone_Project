@@ -1,50 +1,49 @@
 name: CI/CD Pipeline
-
 on:
   push:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Set up Docker Buildx (optional but useful for multi-platform builds)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      # Step 3: Configure AWS Credentials for ECR
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Use the specified region for your ECR
+          aws-region: us-east-1
 
-      # Step 4: Login to Amazon ECR
+      # Create the ECR repository if it doesn't exist
+      - name: Create ECR repository
+        run: |
+          aws ecr describe-repositories --repository-names capstone_proj_frontend || \
+          aws ecr create-repository --repository-name capstone_proj_frontend
+
+          aws ecr describe-repositories --repository-names capstone_proj_backend || \
+          aws ecr create-repository --repository-name capstone_proj_backend
+
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
 
-      # Step 5: Build the backend Docker image
       - name: Build Backend Docker image
         run: docker build -t capstone_proj_backend ./backend
 
-      # Step 6: Build the frontend Docker image
       - name: Build Frontend Docker image
         run: docker build -t capstone_proj_frontend ./frontend
 
-      # Step 7: Tag and push the Backend Docker image to ECR
       - name: Tag and Push Backend Docker image to ECR
         run: |
           docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
 
-      # Step 8: Tag and push the Frontend Docker image to ECR
       - name: Tag and Push Frontend Docker image to ECR
         run: |
           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
