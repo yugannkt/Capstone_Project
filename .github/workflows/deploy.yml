@@ -24,26 +24,35 @@ jobs:
       - name: Authenticate Docker to ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+          echo "Docker login successful"
 
       - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          echo "Docker Hub login successful"
 
       - name: Build Frontend Image
         run: |
           cd frontend  # Change to your frontend directory
           docker build -t capstone_proj:frontend .  # Tag for frontend
+          echo "Frontend image built successfully"
           docker tag capstone_proj:frontend ${{ secrets.ECR_REGISTRY }}/capstone_proj:frontend
+          echo "Frontend image tagged successfully"
 
       - name: Push Frontend Image to ECR
         run: |
           docker push ${{ secrets.ECR_REGISTRY }}/capstone_proj:frontend  # Ensure this path is correct
+          echo "Frontend image pushed to ECR successfully"
 
       - name: Build Backend Image
         run: |
           cd ../backend  # Change to your backend directory
           docker build -t capstone_proj:backend .  # Tag for backend
+          echo "Backend image built successfully"
           docker tag capstone_proj:backend ${{ secrets.ECR_REGISTRY }}/capstone_proj:backend
+          echo "Backend image tagged successfully"
 
       - name: Push Backend Image to ECR
         run: |
           docker push ${{ secrets.ECR_REGISTRY }}/capstone_proj:backend  # Ensure this path is correct
+          echo "Backend image pushed to ECR successfully"
