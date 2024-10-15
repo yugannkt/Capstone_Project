@@ -1,55 +1,11 @@
-# name: CI/CD Pipeline #ci/cd
-# on:
-#   push:
-#     branches:
-#       - main
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v2
-
-#       - name: Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v1
-
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v1
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: us-east-1
-
-#       - name: Login to Amazon ECR
-#         run: |
-#           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
-
-#       - name: Build Backend Docker image
-#         run: docker build -t capstone_proj_backend ./backend
-
-#       - name: Build Frontend Docker image
-#         run: docker build -t capstone_proj_frontend ./frontend
-
-#       - name: Tag and Push Backend Docker image to ECR
-#         run: |
-#           docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-
-#       - name: Tag and Push Frontend Docker image to ECR
-#         run: |
-#           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-name: CI/CD Pipeline
-
+name: CI/CD Pipeline #ci/cd
 on:
   push:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -68,10 +24,18 @@ jobs:
         run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
 
-      - name: Build Combined Docker Image
-        run: docker build -t combined_app .
+      - name: Build Backend Docker image
+        run: docker build -t capstone_proj_backend ./backend
 
-      - name: Tag and Push Combined Docker Image to ECR
+      - name: Build Frontend Docker image
+        run: docker build -t capstone_proj_frontend ./frontend
+
+      - name: Tag and Push Backend Docker image to ECR
         run: |
-          docker tag combined_app:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/combined_app:latest
-          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/combined_app:latest
+          docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+
+      - name: Tag and Push Frontend Docker image to ECR
+        run: |
+          docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
