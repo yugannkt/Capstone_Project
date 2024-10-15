@@ -84,7 +84,7 @@ jobs:
       - name: Create or Update ECS Service
         run: |
           SERVICE_NAME="capstone_service"
-          CLUSTER_NAME="capstone_proj"
+          CLUSTER_NAME="Capstone_proj"
           SUBNET_ID="<YOUR_SUBNET_ID>" # Replace with your actual Subnet ID
           SECURITY_GROUP_ID="sg-0f22472ea2aac0c73" # Your security group ID
           TASK_DEFINITION_NAME="capstone_proj_task"
