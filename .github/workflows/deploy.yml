@@ -127,7 +127,7 @@ jobs:
       - name: Create or Update ECS Service
         run: |
           SERVICE_NAME="capstone_service"
-          CLUSTER_NAME="capstone_proj"
+          CLUSTER_NAME="Capstone_proj"
           SUBNET_ID="vpc-0c40a2ec10c3f7759" # Your VPC ID
           SECURITY_GROUP_ID="sg-0f22472ea2aac0c73" # Your security group ID
 
