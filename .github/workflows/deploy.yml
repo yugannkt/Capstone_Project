@@ -39,14 +39,17 @@
 #         run: |
 #           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 #           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-name: CI/CD Pipeline #ci/cd
+name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -81,28 +84,20 @@ jobs:
           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 
-      - name: Create or Update ECS Service
+      - name: Deploy to Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
         run: |
-          SERVICE_NAME="capstone_service"
-          CLUSTER_NAME="Capstone_proj"
-          SUBNET_ID="<YOUR_SUBNET_ID>" # Replace with your actual Subnet ID
-          SECURITY_GROUP_ID="sg-0f22472ea2aac0c73" # Your security group ID
-          TASK_DEFINITION_NAME="capstone_proj_task"
+          # Install the Elastic Beanstalk CLI
+          pip install awsebcli
 
-          # Check if the service exists
-          SERVICE_STATUS=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query "services[0].serviceName" --output text || echo "Service does not exist")
+          # Initialize Elastic Beanstalk Application
+          eb init -p docker MyDockerApp --region $AWS_REGION
 
-          aws ecs create-service \
-            --cluster "$CLUSTER_NAME" \
-            --service-name "$SERVICE_NAME" \
-            --task-definition "$TASK_DEFINITION_NAME" \
-            --desired-count 1 \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}"
-    
-          # aws ecs update-service \
-          #   --cluster "$CLUSTER_NAME" \
-          #   --service "$SERVICE_NAME" \
-          #   --task-definition "$TASK_DEFINITION_NAME" \
-          #   --desired-count 1
-          
+          # Deploy the backend application
+          eb deploy BackendEnvironment
+
+          # Deploy the frontend application
+          eb deploy FrontendEnvironment
