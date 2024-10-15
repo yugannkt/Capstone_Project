@@ -1,4 +1,4 @@
-name: CI/CD Pipeline #ci/cdd
+name: CI/CD Pipeline
 on:
   push:
     branches:
@@ -39,3 +39,16 @@ jobs:
         run: |
           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+
+      - name: SSH into EC2 and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }} # Your EC2 public IP stored in a secret
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }} # Your PEM file stored as a secret
+          script: |
+            # Your deployment commands here
+            docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+            docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+            docker run -d -p 80:80 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+            docker run -d -p 443:443 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
