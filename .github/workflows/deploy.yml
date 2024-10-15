@@ -68,36 +68,10 @@ jobs:
         run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
 
-      - name: Build Backend Docker image
-        run: docker build -t capstone_proj_backend ./backend
+      - name: Build Combined Docker Image
+        run: docker build -t combined_app .
 
-      - name: Build Frontend Docker image
-        run: docker build -t capstone_proj_frontend ./frontend
-
-      - name: Tag and Push Backend Docker image to ECR
+      - name: Tag and Push Combined Docker Image to ECR
         run: |
-          docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-
-      - name: Tag and Push Frontend Docker image to ECR
-        run: |
-          docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-
-      - name: Deploy to Elastic Beanstalk
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-1
-        run: |
-          # Install the Elastic Beanstalk CLI
-          pip install awsebcli
-
-          # Initialize Elastic Beanstalk Application
-          eb init -p docker MyDockerApp --region $AWS_REGION
-
-          # Deploy the backend application
-          eb deploy BackendEnvironment
-
-          # Deploy the frontend application
-          eb deploy FrontendEnvironment
+          docker tag combined_app:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/combined_app:latest
+          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/combined_app:latest
