@@ -1,3 +1,44 @@
+# name: CI/CD Pipeline #ci/cd
+# on:
+#   push:
+#     branches:
+#       - main
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v1
+
+#       - name: Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v1
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: us-east-1
+
+#       - name: Login to Amazon ECR
+#         run: |
+#           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
+
+#       - name: Build Backend Docker image
+#         run: docker build -t capstone_proj_backend ./backend
+
+#       - name: Build Frontend Docker image
+#         run: docker build -t capstone_proj_frontend ./frontend
+
+#       - name: Tag and Push Backend Docker image to ECR
+#         run: |
+#           docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+
+#       - name: Tag and Push Frontend Docker image to ECR
+#         run: |
+#           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 name: CI/CD Pipeline #ci/cd
 on:
   push:
@@ -39,3 +80,72 @@ jobs:
         run: |
           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+
+      - name: Create ECS Task Definition
+        run: |
+          TASK_DEFINITION=$(cat <<EOF
+          {
+            "family": "capstone_proj_task",
+            "networkMode": "awsvpc",
+            "containerDefinitions": [
+              {
+                "name": "capstone_proj_backend",
+                "image": "975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest",
+                "memory": 512,
+                "cpu": 256,
+                "essential": true,
+                "portMappings": [
+                  {
+                    "containerPort": 5000,
+                    "hostPort": 5000,
+                    "protocol": "tcp"
+                  }
+                ]
+              },
+              {
+                "name": "capstone_proj_frontend",
+                "image": "975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest",
+                "memory": 512,
+                "cpu": 256,
+                "essential": true,
+                "portMappings": [
+                  {
+                    "containerPort": 80,
+                    "hostPort": 80,
+                    "protocol": "tcp"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+          )
+
+          echo "$TASK_DEFINITION" > task-definition.json
+          aws ecs register-task-definition --cli-input-json file://task-definition.json
+
+      - name: Create or Update ECS Service
+        run: |
+          SERVICE_NAME="capstone_service"
+          CLUSTER_NAME="capstone_proj"
+          SUBNET_ID="vpc-0c40a2ec10c3f7759" # Your VPC ID
+          SECURITY_GROUP_ID="sg-0f22472ea2aac0c73" # Your security group ID
+
+          # Check if the service exists
+          if aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query "services[0].serviceName" --output text; then
+            echo "Updating existing service..."
+            aws ecs update-service \
+              --cluster "$CLUSTER_NAME" \
+              --service "$SERVICE_NAME" \
+              --task-definition capstone_proj_task \
+              --desired-count 1
+          else
+            echo "Creating new service..."
+            aws ecs create-service \
+              --cluster "$CLUSTER_NAME" \
+              --service-name "$SERVICE_NAME" \
+              --task-definition capstone_proj_task \
+              --desired-count 1 \
+              --launch-type FARGATE \
+              --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}"
+          fi
