@@ -1,4 +1,4 @@
-name: CI/CD Pipeline #ci/cd
+name: CI/CD Pipeline #ci/cdd
 on:
   push:
     branches:
