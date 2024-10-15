@@ -81,71 +81,28 @@ jobs:
           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 
-      - name: Create ECS Task Definition
-        run: |
-          TASK_DEFINITION=$(cat <<EOF
-          {
-            "family": "capstone_proj_task",
-            "networkMode": "awsvpc",
-            "containerDefinitions": [
-              {
-                "name": "capstone_proj_backend",
-                "image": "975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest",
-                "memory": 512,
-                "cpu": 256,
-                "essential": true,
-                "portMappings": [
-                  {
-                    "containerPort": 5000,
-                    "hostPort": 5000,
-                    "protocol": "tcp"
-                  }
-                ]
-              },
-              {
-                "name": "capstone_proj_frontend",
-                "image": "975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest",
-                "memory": 512,
-                "cpu": 256,
-                "essential": true,
-                "portMappings": [
-                  {
-                    "containerPort": 80,
-                    "hostPort": 80,
-                    "protocol": "tcp"
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
-          )
-
-          echo "$TASK_DEFINITION" > task-definition.json
-          aws ecs register-task-definition --cli-input-json file://task-definition.json
-
       - name: Create or Update ECS Service
         run: |
           SERVICE_NAME="capstone_service"
-          CLUSTER_NAME="Capstone_proj"
-          SUBNET_ID="vpc-0c40a2ec10c3f7759" # Your VPC ID
+          CLUSTER_NAME="capstone_proj"
+          SUBNET_ID="<YOUR_SUBNET_ID>" # Replace with your actual Subnet ID
           SECURITY_GROUP_ID="sg-0f22472ea2aac0c73" # Your security group ID
+          TASK_DEFINITION_NAME="capstone_proj_task"
 
           # Check if the service exists
-          if aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query "services[0].serviceName" --output text; then
-            echo "Updating existing service..."
-            aws ecs update-service \
-              --cluster "$CLUSTER_NAME" \
-              --service "$SERVICE_NAME" \
-              --task-definition capstone_proj_task \
-              --desired-count 1
-          else
-            echo "Creating new service..."
-            aws ecs create-service \
-              --cluster "$CLUSTER_NAME" \
-              --service-name "$SERVICE_NAME" \
-              --task-definition capstone_proj_task \
-              --desired-count 1 \
-              --launch-type FARGATE \
-              --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}"
-          fi
+          SERVICE_STATUS=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query "services[0].serviceName" --output text || echo "Service does not exist")
+
+          aws ecs create-service \
+            --cluster "$CLUSTER_NAME" \
+            --service-name "$SERVICE_NAME" \
+            --task-definition "$TASK_DEFINITION_NAME" \
+            --desired-count 1 \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}"
+    
+          # aws ecs update-service \
+          #   --cluster "$CLUSTER_NAME" \
+          #   --service "$SERVICE_NAME" \
+          #   --task-definition "$TASK_DEFINITION_NAME" \
+          #   --desired-count 1
+          
