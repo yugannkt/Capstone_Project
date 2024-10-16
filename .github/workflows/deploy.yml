@@ -125,7 +125,8 @@ jobs:
 
       - name: Build Frontend Docker image
         run: |
-          echo "REACT_APP_API_URL=http://${{ secrets.EC2_PUBLIC_IP }}:5000" >> .env
+          # Create a .env file with the public IP for API URL
+          echo "REACT_APP_API_URL=http://${{ secrets.EC2_PUBLIC_IP }}:5000" > ./frontend/.env
           docker build -t capstone_proj_frontend ./frontend
 
       - name: Tag and Push Backend Docker image to ECR
