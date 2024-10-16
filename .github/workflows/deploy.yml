@@ -1,4 +1,46 @@
-name: CI/CD Pipeline #sh
+# name: CI/CD Pipeline #sh
+# on:
+#   push:
+#     branches:
+#       - main
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v1
+
+#       - name: Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v1
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: us-east-1
+
+#       - name: Login to Amazon ECR
+#         run: |
+#           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
+
+#       - name: Build Backend Docker image
+#         run: docker build -t capstone_proj_backend ./backend
+
+#       - name: Build Frontend Docker image
+#         run: docker build -t capstone_proj_frontend ./frontend
+
+#       - name: Tag and Push Backend Docker image to ECR
+#         run: |
+#           docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+
+#       - name: Tag and Push Frontend Docker image to ECR
+#         run: |
+#           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+
+name: CI/CD Pipeline
 on:
   push:
     branches:
@@ -22,7 +64,7 @@ jobs:
 
       - name: Login to Amazon ECR
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin your-account-id.dkr.ecr.us-east-1.amazonaws.com
 
       - name: Build Backend Docker image
         run: docker build -t capstone_proj_backend ./backend
@@ -32,23 +74,41 @@ jobs:
 
       - name: Tag and Push Backend Docker image to ECR
         run: |
-          docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+          docker tag capstone_proj_backend:latest your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+          docker push your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
 
       - name: Tag and Push Frontend Docker image to ECR
         run: |
-          docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+          docker tag capstone_proj_frontend:latest your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+          docker push your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 
-      - name: SSH into EC2 and Deploy
-        uses: appleboy/ssh-action@master
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.1
         with:
-          host: ${{ secrets.EC2_PUBLIC_IP }} # Your EC2 public IP stored in a secret
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }} # Your PEM file stored as a secret
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
-            # Your deployment commands here
-            docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-            docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-            docker run -d -p 80:80 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-            docker run -d -p 443:443 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+            # Authenticate Docker to ECR
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin your-account-id.dkr.ecr.us-east-1.amazonaws.com
+
+            # Pull the latest images
+            docker pull your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+            docker pull your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+
+            # Stop and remove existing containers
+            docker stop capstone_proj_backend || true
+            docker stop capstone_proj_frontend || true
+            docker rm capstone_proj_backend || true
+            docker rm capstone_proj_frontend || true
+
+            # Run new containers
+            docker run -d --name capstone_proj_backend -p 5000:5000 your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+            docker run -d --name capstone_proj_frontend -p 80:80 your-account-id.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
