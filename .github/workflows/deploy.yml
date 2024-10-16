@@ -136,20 +136,18 @@ jobs:
           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 
-      - name: Deploy to EC2
+      - name: Deploy to Docker
         run: |
-          ssh -o StrictHostKeyChecking=no -i /path/to/your/private/key.pem ubuntu@<EC2_PUBLIC_IP> << 'EOF'
-            # Pull the latest images
-            docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-            docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+          # Pull the latest images
+          docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+          docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 
-            # Stop and remove existing containers if they exist
-            docker stop capstone_proj_backend || true
-            docker rm capstone_proj_backend || true
-            docker stop capstone_proj_frontend || true
-            docker rm capstone_proj_frontend || true
+          # Stop and remove existing containers if they exist
+          docker stop capstone_proj_backend || true
+          docker rm capstone_proj_backend || true
+          docker stop capstone_proj_frontend || true
+          docker rm capstone_proj_frontend || true
 
-            # Run new containers
-            docker run -d --restart always --name capstone_proj_backend 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-            docker run -d --restart always --name capstone_proj_frontend 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-          EOF
+          # Run new containers
+          docker run -d --restart always --name capstone_proj_backend 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+          docker run -d --restart always --name capstone_proj_frontend 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
