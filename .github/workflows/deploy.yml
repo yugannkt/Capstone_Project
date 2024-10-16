@@ -1,4 +1,4 @@
-# name: CI/CD Pipeline #sh
+# name: CI/CD Pipeline #shs
 # on:
 #   push:
 #     branches:
