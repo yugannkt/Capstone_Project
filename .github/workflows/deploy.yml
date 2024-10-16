@@ -39,15 +39,17 @@
 #         run: |
 #           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 #           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-name: CI/CD Pipeline
+name: Deploy to EC2
+
 on:
   push:
     branches:
-      - main
+      - main  # Change this if you want to use a different branch
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -62,53 +64,33 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
-
-      - name: Build Backend Docker image
-        run: docker build -t capstone_proj_backend ./backend
-
-      - name: Build Frontend Docker image
-        run: docker build -t capstone_proj_frontend ./frontend
-
-      - name: Tag and Push Backend Docker image to ECR
-        run: |
-          docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-
-      - name: Tag and Push Frontend Docker image to ECR
-        run: |
-          docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-          docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.1
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          host: ${{ secrets.EC2_HOST }}  # Your EC2 public IP or DNS
+          username: ${{ secrets.EC2_USER }}  # Your EC2 username
+          key: ${{ secrets.EC2_PRIVATE_KEY }}  # Your private key
           script: |
-            # Authenticate Docker to ECR
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
+            # Create .ssh directory if it doesn't exist
+            mkdir -p ~/.ssh
 
-            # Pull the latest images
+            # Add the public key to authorized_keys
+            echo "${{ secrets.EC2_PUBLIC_KEY }}" >> ~/.ssh/authorized_keys
+
+            # Set permissions
+            chmod 700 ~/.ssh
+            chmod 600 ~/.ssh/authorized_keys
+
+            # (Optional) Pull Docker images and restart containers
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
             docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
             docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-
-            # Stop and remove existing containers
             docker stop capstone_proj_backend || true
             docker stop capstone_proj_frontend || true
             docker rm capstone_proj_backend || true
             docker rm capstone_proj_frontend || true
+            docker run -d --name capstone_proj_backend -p 5000:5000 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+            docker run -d --name capstone_proj_frontend -p 80:80 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 
-            # Run new containers
             docker run -d --name capstone_proj_backend -p 5000:5000 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
             docker run -d --name capstone_proj_frontend -p 80:80 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
