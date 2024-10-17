@@ -1,72 +1,11 @@
-# name: CI/CD Pipelinee
-# on:
-#   push:
-#     branches:
-#       - main
-# jobs:
-#   build:
-#     runs-on: self-hosted  # Use self-hosted runner
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v2
-
-#       - name: Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v1
-
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v1
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: us-east-1
-
-#       - name: Login to Amazon ECR
-#         run: |
-#           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 975050161532.dkr.ecr.us-east-1.amazonaws.com
-
-#       - name: Build Backend Docker image
-#         run: docker build -t capstone_proj_backend ./backend
-
-#       - name: Build Frontend Docker image
-#         run: |
-#           # Create a .env file with the public IP for API URL
-#           echo "REACT_APP_API_URL=http://${{ secrets.EC2_PUBLIC_IP }}:5000" > ./frontend/.env
-#           docker build -t capstone_proj_frontend ./frontend
-
-#       - name: Tag and Push Backend Docker image to ECR
-#         run: |
-#           docker tag capstone_proj_backend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-
-#       - name: Tag and Push Frontend Docker image to ECR
-#         run: |
-#           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-#           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-
-#       - name: Deploy to Docker
-#         run: |
-#           # Pull the latest images
-#           docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-#           docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-          
-#           # Stop and remove existing containers if they exist
-#           docker stop capstone_proj_backend || true
-#           docker rm capstone_proj_backend || true
-#           docker stop capstone_proj_frontend || true
-#           docker rm capstone_proj_frontend || true
-          
-#           # Run new containers with port mapping
-#           docker run -d --restart always --name capstone_proj_backend -p 5000:5000 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-#           docker run -d --restart always --name capstone_proj_frontend -p 80:80 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-name: CI/CD Pipeline
+name: CI/CD Pipelinee
 on:
   push:
     branches:
-      - main  # Trigger the workflow on push to the main branch
-
+      - main
 jobs:
   build:
-    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+    runs-on: self-hosted  # Use self-hosted runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -79,7 +18,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Change this to your desired region
+          aws-region: us-east-1
 
       - name: Login to Amazon ECR
         run: |
@@ -89,7 +28,10 @@ jobs:
         run: docker build -t capstone_proj_backend ./backend
 
       - name: Build Frontend Docker image
-        run: docker build -t capstone_proj_frontend ./frontend
+        run: |
+          # Create a .env file with the public IP for API URL
+          echo "REACT_APP_API_URL=http://${{ secrets.EC2_PUBLIC_IP }}:5000" > ./frontend/.env
+          docker build -t capstone_proj_frontend ./frontend
 
       - name: Tag and Push Backend Docker image to ECR
         run: |
@@ -101,24 +43,18 @@ jobs:
           docker tag capstone_proj_frontend:latest 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
           docker push 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
 
-      # Register Backend Task Definition
-      - name: Register Backend Task Definition
+      - name: Deploy to Docker
         run: |
-          aws ecs register-task-definition --cli-input-json file://backend-task.json
-
-      # Register Frontend Task Definition
-      - name: Register Frontend Task Definition
-        run: |
-          aws ecs register-task-definition --cli-input-json file://frontend-task.json
-
-      # Create or Update Backend Service
-      - name: Create or Update Backend Service
-        run: |
-          aws ecs describe-services --cluster capstone-cluster --services capstone-backend-service || \
-          aws ecs create-service --cluster capstone-cluster --service-name capstone-backend-service --task-definition capstone_proj_backend --desired-count 1 --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[your-subnet-id],securityGroups=[your-security-group-id],assignPublicIp=ENABLED}"
-
-# Create or Update Frontend Service
-     - name: Create or Update Frontend Service
-       run: |
-         aws ecs describe-services --cluster capstone-cluster --services capstone-frontend-service || \
-         aws ecs create-service --cluster capstone-cluster --service-name capstone-frontend-service --task-definition capstone_proj_frontend --desired-count 1 --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[your-subnet-id],securityGroups=[your-security-group-id],assignPublicIp=ENABLED}"
+          # Pull the latest images
+          docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+          docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
+          
+          # Stop and remove existing containers if they exist
+          docker stop capstone_proj_backend || true
+          docker rm capstone_proj_backend || true
+          docker stop capstone_proj_frontend || true
+          docker rm capstone_proj_frontend || true
+          
+          # Run new containers with port mapping
+          docker run -d --restart always --name capstone_proj_backend -p 5000:5000 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
+          docker run -d --restart always --name capstone_proj_frontend -p 80:80 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
