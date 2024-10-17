@@ -114,11 +114,11 @@ jobs:
       # Create or Update Backend Service
       - name: Create or Update Backend Service
         run: |
-          aws ecs update-service --cluster capstone-cluster --service capstone-backend-service --task-definition capstone_proj_backend || \
-          aws ecs create-service --cluster capstone-cluster --service-name capstone-backend-service --task-definition capstone_proj_backend --desired-count 1 --launch-type FARGATE
+          aws ecs describe-services --cluster capstone-cluster --services capstone-backend-service || \
+          aws ecs create-service --cluster capstone-cluster --service-name capstone-backend-service --task-definition capstone_proj_backend --desired-count 1 --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[your-subnet-id],securityGroups=[your-security-group-id],assignPublicIp=ENABLED}"
 
-      # Create or Update Frontend Service
-      - name: Create or Update Frontend Service
-        run: |
-          aws ecs update-service --cluster capstone-cluster --service capstone-frontend-service --task-definition capstone_proj_frontend || \
-          aws ecs create-service --cluster capstone-cluster --service-name capstone-frontend-service --task-definition capstone_proj_frontend --desired-count 1 --launch-type FARGATE
+# Create or Update Frontend Service
+     - name: Create or Update Frontend Service
+       run: |
+         aws ecs describe-services --cluster capstone-cluster --services capstone-frontend-service || \
+         aws ecs create-service --cluster capstone-cluster --service-name capstone-frontend-service --task-definition capstone_proj_frontend --desired-count 1 --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[your-subnet-id],securityGroups=[your-security-group-id],assignPublicIp=ENABLED}"
