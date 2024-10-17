@@ -1,0 +1,24 @@
+{
+  "family": "capstone_proj_frontend",
+  "containerDefinitions": [
+    {
+      "name": "capstone_proj_frontend",
+      "image": "975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest",
+      "essential": true,
+      "memory": 512,
+      "cpu": 256,
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80
+        }
+      ],
+      "environment": [
+        {
+          "name": "REACT_APP_API_URL",
+          "value": "http://capstone-backend-service:5000"
+        }
+      ]
+    }
+  ]
+}
