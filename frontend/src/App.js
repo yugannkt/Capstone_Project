@@ -11,7 +11,7 @@ const App = () => {
 
   // Base URL for the API
   //const API_URL = process.env.REACT_APP_API_URL || 'http://107.20.122.43/:5000'; // Fallback to localhost for development
-  const API_URL = 'http://107.20.122.43/:5000';
+  const API_URL = 'http://107.20.122.43:5000';
   const fetchTasks = async () => {
     const response = await axios.get(`${API_URL}/tasks`);
     setTasks(response.data);
