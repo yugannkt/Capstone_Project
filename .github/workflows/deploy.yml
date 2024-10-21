@@ -5,7 +5,7 @@ on:
       - main
 jobs:
   build:
-    runs-on: self-hosted  # Use self-hosted runner
+    runs-on: self-hosted  
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -29,8 +29,6 @@ jobs:
 
       - name: Build Frontend Docker image
         run: |
-          # Create a .env file with the public IP for API URL
-          #echo "REACT_APP_API_URL=http://${{ secrets.EC2_PUBLIC_IP }}:5000" > ./frontend/.env
           docker build -t capstone_proj_frontend ./frontend
 
       - name: Tag and Push Backend Docker image to ECR
@@ -45,26 +43,19 @@ jobs:
 
       - name: Deploy to Docker
         run: |
-          # Pull the latest images
           docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
           docker pull 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
           
-          # Stop and remove existing containers if they exist
           docker stop capstone_proj_backend || true
           docker rm capstone_proj_backend || true
           docker stop capstone_proj_frontend || true
           docker rm capstone_proj_frontend || true
           
-          # # Run new containers with port mapping
-          # docker run -d --restart always --name capstone_proj_backend -p 5000:5000 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
-          # docker run -d --restart always --name capstone_proj_frontend -p 80:80 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_frontend:latest
-
       - name: Create CloudWatch Log Group
         run: |
           aws logs create-log-group --log-group-name capstone_proj_backend_log_group || true
           aws logs create-log-group --log-group-name capstone_proj_frontend_log_group || true
 
-       # Example for Backend Container
       - name: Run Backend Container
         run: |
           docker run -d --restart always --name capstone_proj_backend \
@@ -74,7 +65,6 @@ jobs:
             --log-opt awslogs-stream=backend \
             -p 5000:5000 975050161532.dkr.ecr.us-east-1.amazonaws.com/capstone_proj_backend:latest
 
-      # Example for Frontend Container
       - name: Run Frontend Container
         run: |
           docker run -d --restart always --name capstone_proj_frontend \
