@@ -56,7 +56,7 @@ const App = () => {
 
   return (
     <div className="container mt-5">
-      <h1 className="text-center">Task Checklist</h1>
+      <h1 className="text-center">Task Checklist New</h1>
       <div className="input-group mb-3">
         <input
           type="text"
